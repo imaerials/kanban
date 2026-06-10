@@ -1,9 +1,131 @@
 import { Router } from 'express';
 import { db } from '../db/index.js';
 import { boards, columns, tasks, subtasks, taskComments } from '../db/schema.js';
-import { eq, asc } from 'drizzle-orm';
+import { eq, asc, desc, and, or, ilike, inArray, gte, lte, sql, type SQL } from 'drizzle-orm';
 
 const router = Router();
+
+// ---- Task search / filtering -------------------------------------------------
+
+const SORTABLE = {
+  createdAt: tasks.createdAt,
+  updatedAt: tasks.updatedAt,
+  dueDate: tasks.dueDate,
+  position: tasks.position,
+  priority: tasks.priority,
+  title: tasks.title,
+  storyPoints: tasks.storyPoints,
+} as const;
+
+// Build the WHERE clauses shared by the search endpoints from query params.
+function buildTaskFilters(query: Record<string, unknown>, boardId?: string): SQL[] {
+  const conditions: SQL[] = [];
+
+  const q = query.q ? String(query.q).trim() : '';
+  if (q) {
+    conditions.push(
+      or(ilike(tasks.title, `%${q}%`), ilike(tasks.description, `%${q}%`)) as SQL,
+    );
+  }
+
+  const multi = (val: unknown, col: any) => {
+    if (val === undefined) return;
+    const values = String(val).split(',').map((s) => s.trim()).filter(Boolean);
+    if (values.length) conditions.push(inArray(col, values));
+  };
+  multi(query.priority, tasks.priority);
+  multi(query.storyType, tasks.storyType);
+  multi(query.assignee, tasks.assignee);
+
+  if (query.columnId !== undefined) {
+    conditions.push(eq(tasks.columnId, String(query.columnId)));
+  }
+  if (boardId) {
+    conditions.push(eq(columns.boardId, boardId));
+  } else if (query.boardId !== undefined) {
+    conditions.push(eq(columns.boardId, String(query.boardId)));
+  }
+
+  // tags are stored as a JSON-array string e.g. ["bug","api"]; match the quoted token.
+  if (query.tag !== undefined) {
+    for (const t of String(query.tag).split(',').map((s) => s.trim()).filter(Boolean)) {
+      conditions.push(ilike(tasks.tags, `%"${t}"%`));
+    }
+  }
+
+  if (query.dueBefore !== undefined) {
+    const d = new Date(String(query.dueBefore));
+    if (!isNaN(d.getTime())) conditions.push(lte(tasks.dueDate, d));
+  }
+  if (query.dueAfter !== undefined) {
+    const d = new Date(String(query.dueAfter));
+    if (!isNaN(d.getTime())) conditions.push(gte(tasks.dueDate, d));
+  }
+  if (query.updatedSince !== undefined) {
+    const d = new Date(String(query.updatedSince));
+    if (!isNaN(d.getTime())) conditions.push(gte(tasks.updatedAt, d));
+  }
+
+  return conditions;
+}
+
+function parseTags(raw: string | null): string[] {
+  try {
+    const v = JSON.parse(raw || '[]');
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+
+async function searchTasks(query: Record<string, unknown>, boardId?: string) {
+  const conditions = buildTaskFilters(query, boardId);
+  const where = conditions.length ? and(...conditions) : undefined;
+
+  const sortKey = String(query.sort || 'updatedAt');
+  const sortCol = SORTABLE[sortKey as keyof typeof SORTABLE] ?? tasks.updatedAt;
+  const direction = String(query.order || 'desc').toLowerCase() === 'asc' ? asc : desc;
+
+  const limit = Math.min(Math.max(parseInt(String(query.limit ?? '50'), 10) || 50, 1), 200);
+  const offset = Math.max(parseInt(String(query.offset ?? '0'), 10) || 0, 0);
+
+  const rows = await db
+    .select({ task: tasks, columnTitle: columns.title, boardId: columns.boardId })
+    .from(tasks)
+    .innerJoin(columns, eq(tasks.columnId, columns.id))
+    .where(where)
+    .orderBy(direction(sortCol))
+    .limit(limit)
+    .offset(offset);
+
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(tasks)
+    .innerJoin(columns, eq(tasks.columnId, columns.id))
+    .where(where);
+
+  return {
+    total: count,
+    limit,
+    offset,
+    count: rows.length,
+    tasks: rows.map((r) => ({
+      ...r.task,
+      tags: parseTags(r.task.tags),
+      columnTitle: r.columnTitle,
+      boardId: r.boardId,
+    })),
+  };
+}
+
+// Global task search across all boards.
+router.get('/tasks/search', async (req, res) => {
+  try {
+    res.json(await searchTasks(req.query as Record<string, unknown>));
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
+  }
+});
 
 // Helpers
 async function getBoardWithData(boardId: string) {
@@ -61,6 +183,15 @@ router.get('/boards/:id', async (req, res) => {
   const board = await getBoardWithData(String(req.params.id));
   if (!board) return res.status(404).json({ error: 'Board not found' });
   res.json(board);
+});
+
+// Search/filter tasks within a single board.
+router.get('/boards/:id/tasks', async (req, res) => {
+  try {
+    res.json(await searchTasks(req.query as Record<string, unknown>, String(req.params.id)));
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
+  }
 });
 
 router.patch('/boards/:id', async (req, res) => {
