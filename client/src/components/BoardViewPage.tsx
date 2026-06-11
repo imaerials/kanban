@@ -67,7 +67,16 @@ export function BoardViewPage() {
         </div>
         <div className="header-right">
           {board && (
-            <button onClick={loadBoard} className="btn-refresh">↻ Refresh</button>
+            <>
+              <button onClick={loadBoard} className="btn-refresh">↻ Refresh</button>
+              <button
+                onClick={() => handleDeleteBoard(board.id)}
+                className="btn-delete-board"
+                title="Delete this board"
+              >
+                🗑 Delete Board
+              </button>
+            </>
           )}
         </div>
       </header>

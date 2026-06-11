@@ -179,3 +179,28 @@ kanban/
 ## Deployment
 
 Deployed on homelab LXC 101 (`ubuntu-docker`) at `192.168.68.73`, managed via Proxmox.
+
+### Syncing code changes from dev machine
+
+After editing source files locally, sync to the LXC and rebuild the client. These commands are safe to run whether or not the containers are already running — `docker compose up -d` will stop and recreate only the affected container with the new image.
+
+```bash
+# Sync source files to the server (run from this machine)
+rsync -av --exclude='node_modules' --exclude='.git' \
+  /home/ariel/kanban/ ariel@192.168.68.73:/home/ariel/kanban/
+
+# Rebuild and restart the client container (run on the server, or add --build to compose)
+ssh ariel@192.168.68.73 "cd /home/ariel/kanban && docker compose build client && docker compose up -d client"
+```
+
+To rebuild just the API server:
+
+```bash
+ssh ariel@192.168.68.73 "cd /home/ariel/kanban && docker compose build server && docker compose up -d server"
+```
+
+To rebuild everything:
+
+```bash
+ssh ariel@192.168.68.73 "cd /home/ariel/kanban && docker compose up --build -d"
+```

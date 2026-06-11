@@ -133,6 +133,27 @@ body {
   background: var(--surface-hover);
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-delete-board {
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid #ef444440;
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.btn-delete-board:hover {
+  background: #ef444415;
+  border-color: #ef4444;
+}
+
 /* Main */
 main {
   flex: 1;
@@ -459,7 +480,7 @@ main {
   cursor: pointer;
   font-size: 0.65rem;
   margin-left: auto;
-  opacity: 0;
+  opacity: 0.4;
 }
 
 .subtask:hover button {
@@ -971,6 +992,46 @@ main {
   color: var(--text);
   line-height: 1.6;
   white-space: pre-wrap;
+}
+
+.detail-description-display {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  color: var(--text);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  cursor: text;
+  min-height: 48px;
+}
+
+.detail-description-display:hover {
+  border-color: var(--primary);
+}
+
+.detail-description-display.empty {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.detail-description-textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.detail-description-textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
 /* Tags */

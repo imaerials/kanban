@@ -18,10 +18,13 @@ export function TaskDetailPage() {
   const [loading, setLoading] = useState(true);
   const [editingTitle, setEditingTitle] = useState(false);
   const [editTitle, setEditTitle] = useState('');
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [editDescription, setEditDescription] = useState('');
   const [newSubtask, setNewSubtask] = useState('');
   const [newComment, setNewComment] = useState('');
   const [commentAuthor, setCommentAuthor] = useState('');
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
   const loadTask = async () => {
     if (!taskId) return;
@@ -47,6 +50,14 @@ export function TaskDetailPage() {
     }
   }, [editingTitle]);
 
+  useEffect(() => {
+    if (editingDescription && descriptionRef.current) {
+      descriptionRef.current.focus();
+      const len = descriptionRef.current.value.length;
+      descriptionRef.current.setSelectionRange(len, len);
+    }
+  }, [editingDescription]);
+
   if (loading) return <div className="task-detail-page"><div className="loading">Loading...</div></div>;
   if (!task) return null;
 
@@ -61,6 +72,22 @@ export function TaskDetailPage() {
       } catch { toast.error('Failed to update title'); }
     }
     setEditingTitle(false);
+  };
+
+  const handleSaveDescription = async () => {
+    const newDesc = editDescription.trim() || null;
+    if (newDesc !== (task.description || null)) {
+      try {
+        await updateTask(task.id, { description: newDesc } as any);
+        setTask({ ...task, description: newDesc });
+      } catch { toast.error('Failed to update description'); }
+    }
+    setEditingDescription(false);
+  };
+
+  const handleStartEditDescription = () => {
+    setEditDescription(task.description || '');
+    setEditingDescription(true);
   };
 
   const handleFieldChange = async (field: string, value: any) => {
@@ -224,12 +251,30 @@ export function TaskDetailPage() {
             </div>
           </div>
 
-          {task.description && (
-            <div className="detail-description">
-              <h3>Description</h3>
-              <p>{task.description}</p>
-            </div>
-          )}
+          <div className="detail-description">
+            <h3>Description</h3>
+            {editingDescription ? (
+              <textarea
+                ref={descriptionRef}
+                className="detail-description-textarea"
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                onBlur={handleSaveDescription}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') setEditingDescription(false);
+                }}
+                placeholder="Add a description..."
+                rows={4}
+              />
+            ) : (
+              <div
+                className={`detail-description-display ${!task.description ? 'empty' : ''}`}
+                onClick={handleStartEditDescription}
+              >
+                {task.description || 'Click to add description...'}
+              </div>
+            )}
+          </div>
 
           {/* User Story section */}
           <div className="detail-story-section">
