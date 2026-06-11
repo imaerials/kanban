@@ -106,6 +106,38 @@ All resource endpoints are mounted under `/api`. `/health` is mounted at the roo
 | PATCH  | `/api/comments/:id`               | Update content/author        |
 | DELETE | `/api/comments/:id`               | Delete a comment             |
 
+### Search & Filtering
+
+Both endpoints return the same shape: `{ total, limit, offset, count, tasks[] }`. Each task includes `columnTitle` and `boardId`.
+
+| Method | Path                      | Description                              |
+| ------ | ------------------------- | ---------------------------------------- |
+| GET    | `/api/tasks/search`       | Search across all boards                 |
+| GET    | `/api/boards/:id/tasks`   | Search/filter within a specific board    |
+
+**Query parameters:**
+
+| Param         | Example                  | Description                                          |
+| ------------- | ------------------------ | ---------------------------------------------------- |
+| `q`           | `q=auth`                 | Full-text match on title and description             |
+| `priority`    | `priority=high,urgent`   | Comma-separated: `low`, `medium`, `high`, `urgent`   |
+| `storyType`   | `storyType=bug`          | `task`, `user_story`, `bug`                          |
+| `assignee`    | `assignee=ariel`         | Exact match on assignee field                        |
+| `tag`         | `tag=api`                | Tag value present in the JSON tags array             |
+| `columnId`    | `columnId=<uuid>`        | Tasks in a specific column                           |
+| `dueBefore`   | `dueBefore=2026-07-01`   | Due date ≤ value                                     |
+| `dueAfter`    | `dueAfter=2026-06-01`    | Due date ≥ value                                     |
+| `updatedSince`| `updatedSince=2026-06-01`| Updated at ≥ value                                   |
+| `sort`        | `sort=dueDate`           | `createdAt`, `updatedAt`, `dueDate`, `priority`, `title`, `storyPoints` |
+| `order`       | `order=asc`              | `asc` or `desc` (default `desc`)                     |
+| `limit`       | `limit=20`               | Max results, 1–200 (default 50)                      |
+| `offset`      | `offset=50`              | Pagination offset (default 0)                        |
+
+**Example:**
+```
+GET /api/tasks/search?q=auth&priority=high,urgent&sort=dueDate&order=asc&limit=10
+```
+
 ### Utility
 
 | Method | Path       | Description                          |
@@ -140,20 +172,20 @@ Postgres defaults (Compose): db `kanban`, user `kanban`, password `kanban123`, v
 Server (`server/`):
 
 ```bash
-npm run dev          # tsx watch
-npm run build        # tsc
-npm start            # node dist/index.js
-npm run db:generate  # drizzle-kit generate
-npm run db:migrate   # drizzle-kit migrate
-npm run db:push      # drizzle-kit push
+pnpm dev          # tsx watch
+pnpm build        # tsc
+pnpm start        # node dist/index.js
+pnpm db:generate  # drizzle-kit generate
+pnpm db:migrate   # drizzle-kit migrate
+pnpm db:push      # drizzle-kit push
 ```
 
 Client (`client/`):
 
 ```bash
-npm run dev      # vite
-npm run build    # tsc && vite build
-npm run preview  # vite preview
+pnpm dev      # vite
+pnpm build    # tsc && vite build
+pnpm preview  # vite preview
 ```
 
 ## Project Structure

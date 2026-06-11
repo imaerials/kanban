@@ -1,4 +1,4 @@
-import { Board, BoardListItem, Column, Task, Subtask, TaskComment, TaskDetail } from '../types';
+import { Board, BoardListItem, Column, Task, Subtask, TaskComment, TaskDetail, SearchResult } from '../types';
 
 const API_BASE = '/api';
 
@@ -43,6 +43,12 @@ export const moveTask = (id: string, data: { columnId: string; position: number;
   fetchJSON<Task>(`${API_BASE}/tasks/${id}/move`, { method: 'PUT', body: JSON.stringify(data) });
 export const deleteTask = (id: string) =>
   fetchJSON<void>(`${API_BASE}/tasks/${id}`, { method: 'DELETE' });
+
+// Search
+export const searchBoardTasks = (boardId: string, q: string) =>
+  fetchJSON<SearchResult>(`${API_BASE}/boards/${boardId}/tasks?q=${encodeURIComponent(q)}&limit=10`);
+export const searchAllTasks = (q: string) =>
+  fetchJSON<SearchResult>(`${API_BASE}/tasks/search?q=${encodeURIComponent(q)}&limit=10`);
 
 // Subtasks
 export const addSubtask = (taskId: string, title: string) =>

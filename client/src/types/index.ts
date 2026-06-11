@@ -71,3 +71,22 @@ export interface BoardListItem {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface SearchTask {
+  id: string;
+  columnId: string;
+  title: string;
+  description: string | null;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  assignee: string | null;
+  columnTitle: string;
+  boardId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SearchResult {
+  total: number;
+  count: number;
+  tasks: SearchTask[];
+}
