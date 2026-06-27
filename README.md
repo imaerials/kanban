@@ -218,21 +218,28 @@ After editing source files locally, sync to the LXC and rebuild the client. Thes
 
 ```bash
 # Sync source files to the server (run from this machine)
-rsync -av --exclude='node_modules' --exclude='.git' \
-  /home/ariel/kanban/ ariel@192.168.68.73:/home/ariel/kanban/
+# No --delete flag, so nothing on the server is removed. Excludes keep local-only
+# artifacts (deps, build output, dev env, DB volume dir) from clobbering the server.
+rsync -av \
+  --exclude='node_modules' \
+  --exclude='.git' \
+  --exclude='.env' \
+  --exclude='dist' \
+  --exclude='pgdata' \
+  /home/ariel/kanban/ root@192.168.68.73:/home/ariel/kanban/
 
 # Rebuild and restart the client container (run on the server, or add --build to compose)
-ssh ariel@192.168.68.73 "cd /home/ariel/kanban && docker compose build client && docker compose up -d client"
+ssh root@192.168.68.73 "cd /home/ariel/kanban && docker compose build client && docker compose up -d client"
 ```
 
 To rebuild just the API server:
 
 ```bash
-ssh ariel@192.168.68.73 "cd /home/ariel/kanban && docker compose build server && docker compose up -d server"
+ssh root@192.168.68.73 "cd /home/ariel/kanban && docker compose build server && docker compose up -d server"
 ```
 
 To rebuild everything:
 
 ```bash
-ssh ariel@192.168.68.73 "cd /home/ariel/kanban && docker compose up --build -d"
+ssh root@192.168.68.73 "cd /home/ariel/kanban && docker compose up --build -d"
 ```

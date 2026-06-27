@@ -3,7 +3,7 @@ import { db } from '../db/index.js';
 import { boards, columns, tasks, subtasks, taskComments } from '../db/schema.js';
 import { eq, asc, desc, and, or, ilike, inArray, gte, lte, sql, type SQL } from 'drizzle-orm';
 
-const router = Router();
+const router: Router = Router();
 
 // ---- Task search / filtering -------------------------------------------------
 

@@ -71,6 +71,13 @@ async function start() {
         ALTER TABLE task_comments ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW() NOT NULL;
       EXCEPTION WHEN duplicate_column THEN NULL;
       END $$;
+
+      -- Migration: add user-story fields to tasks (pre-story boards)
+      ALTER TABLE tasks ADD COLUMN IF NOT EXISTS story_type VARCHAR(20) DEFAULT 'task';
+      ALTER TABLE tasks ADD COLUMN IF NOT EXISTS story_role TEXT;
+      ALTER TABLE tasks ADD COLUMN IF NOT EXISTS story_goal TEXT;
+      ALTER TABLE tasks ADD COLUMN IF NOT EXISTS story_benefit TEXT;
+      ALTER TABLE tasks ADD COLUMN IF NOT EXISTS story_points INTEGER;
     `);
     console.log('✅ Database tables ready');
   } catch (err) {
